@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clouddb
+  labels:
+    app: cf
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: cf
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydb
+  labels:
+    app: cf
+spec:
+  selector:
+   matchLabels:
+     app: cf
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cf
+    spec:
+       containers:
+       - image: mysql:5.6
+         name: mysql
+         env:
+         - name: MYSQL_ROOT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+              name: sqlroot-password
+              key: root-pass
+         - name: MYSQL_USER
+           value: redhat
+         - name: MYSQL_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: mysql-pass
+               key: password
+         - name: MYSQL_DATABASE
+           value: mydb
+         ports:
+         - containerPort: 3306
+           name: mysql
+         volumeMounts:
+         - name: mysql-ps
+           mountPath: /var/lib/mysql
+       volumes:
+       - name: mysql-ps
+         persistentVolumeClaim:
+           claimName: db-pv-claim

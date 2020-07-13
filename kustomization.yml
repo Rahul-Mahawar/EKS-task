@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+secretGenerator:
+- name: sql-pass
+  literals:
+  - pass=redhat
+- name: sqlroot-pass
+  literals:
+  - root-pass=redhat
+resources:
+  - owncloud.yml
+  - db.yml

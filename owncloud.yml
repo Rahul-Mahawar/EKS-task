@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: owncloud
+  labels:
+    app: cf
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: cf
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: owncloud
+  labels:
+    app: cf
+spec:
+  selector:
+    matchLabels:
+      app: cf
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cf
+        tier: frontend
+    spec:
+      containers:
+      - image: owncloud
+        name: owncloud
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+             name: sqlroot-password
+             key: root-pass
+        - name: MYSQL_USER
+          value: redhat
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: MYSQL_DATABASE
+          value: mydb
+        ports:
+        - containerPort: 80
+          name: owncloud
+        volumeMounts:
+        - name: owncloud-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: owncloud-persistent-storage
+        persistentVolumeClaim:
+          claimName: efs-owncloud
